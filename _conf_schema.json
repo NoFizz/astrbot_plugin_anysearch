@@ -1,0 +1,62 @@
+{
+    "api_base": {
+        "type": "string",
+        "description": "API Base URL",
+        "default": "https://api.anysearch.com",
+        "hint": "AnySearch API 地址"
+    },
+    "api_key": {
+        "type": "string",
+        "description": "API Key",
+        "default": "",
+        "hint": "在 anysearch.com 控制台获取，每日 1000 次免费调用",
+        "obvious_hint": true
+    },
+    "max_results": {
+        "type": "int",
+        "description": "最大返回结果数",
+        "default": 10,
+        "hint": "返回给 LLM 的最大搜索结果数量，范围 1-20",
+        "min": 1,
+        "max": 20
+    },
+    "format": {
+        "type": "string",
+        "description": "输出格式",
+        "default": "json",
+        "options": ["json", "markdown"],
+        "hint": "搜索结果输出格式"
+    },
+    "zone": {
+        "type": "string",
+        "description": "搜索区域",
+        "default": "cn",
+        "options": ["cn", "intl"],
+        "hint": "搜索区域：cn（中国）或 intl（国际）"
+    },
+    "language": {
+        "type": "string",
+        "description": "语言偏好",
+        "default": "zh-CN",
+        "options": ["zh-CN", "en", "ja", "ko"],
+        "hint": "搜索结果的首选语言"
+    },
+    "timeout": {
+        "type": "int",
+        "description": "超时时间",
+        "default": 15,
+        "hint": "网络请求超时时间（秒），最小值为 3"
+    },
+    "cache_ttl": {
+        "type": "int",
+        "description": "搜索结果缓存时间（秒），0 表示禁用缓存",
+        "default": 300,
+        "hint": "相同查询在缓存有效期内不会重复调用 API"
+    },
+    "extract_max_length": {
+        "type": "int",
+        "description": "网页正文提取最大返回字符数",
+        "default": 8000,
+        "hint": "超出部分将被截断，避免占用过多 LLM 上下文"
+    }
+}

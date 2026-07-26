@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+
+# 开发专用，不发布到 GitHub
+AGENTS.md
+docs/
+tests/
