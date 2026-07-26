@@ -1,8 +1,18 @@
-# AnySearch 智能搜索
+# astrbot_plugin_anysearch
+
+<p align="center">
+  <img src="logo.png" width="128" height="128" alt="astrbot_plugin_anysearch logo">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="version">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-green" alt="license">
+  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange" alt="AstrBot version">
+</p>
 
 基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 42 种垂直能力标签精准搜索。
 
-## 功能
+## 功能特性
 
 - **通用搜索**：支持任意关键词的网页搜索，API 自动路由到最佳数据源
 - **垂直能力标签搜索**：42 种 tag 覆盖金融、学术、代码、法律、安全、医疗、商业、旅游等领域
@@ -13,30 +23,64 @@
 - **连接池管理**：复用 HTTP Session，限制并发连接数，防止耗尽端口
 - **输入校验**：关键词最长 500 字符，URL 最长 2048 字符，仅允许 http/https 协议
 
-## 注册与获取 API Key
+## 安装
+
+### 方法一：通过 AstrBot WebUI 安装（推荐）
+
+1. 打开 AstrBot WebUI → 插件管理 → 新增插件。
+2. 选择 **从 GitHub 安装**。
+3. 填入仓库地址：
+   ```
+   https://github.com/NoFizz/astrbot_plugin_anysearch
+   ```
+4. 等待安装完成，确认插件已启用。
+
+### 方法二：手动安装
+
+1. 将本仓库克隆或下载到 AstrBot 的插件目录：
+   ```bash
+   cd AstrBot/data/plugins
+   git clone https://github.com/NoFizz/astrbot_plugin_anysearch.git
+   ```
+2. 安装依赖：
+   ```bash
+   pip install -r astrbot_plugin_anysearch/requirements.txt
+   ```
+3. 在 AstrBot WebUI 中重载插件，或重启 AstrBot。
+
+### 安装后检查
+
+- 确认 `requirements.txt` 中的依赖已正确安装。
+- 在 WebUI 插件管理中确认插件状态为"已启用"且无报错。
+- 在插件设置中填写 API 配置后即可使用。
+
+## 配置说明
+
+在 AstrBot WebUI 插件管理中点击本插件进行配置。
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `api_base` | string | `https://api.anysearch.com` | AnySearch API 地址 |
+| `api_key` | string | 空 | API Key（可选），在 anysearch.com 控制台获取 |
+| `max_results` | int | `10` | 最大返回结果数（1-20，用户自定义） |
+| `format` | string | `json` | 输出格式：`json` 或 `markdown` |
+| `zone` | string | `cn` | 搜索区域：`cn`（中国）或 `intl`（国际） |
+| `language` | string | `zh-CN` | 语言偏好 |
+| `timeout` | int | `15` | 请求超时时间（秒），最小值 3 |
+| `cache_ttl` | int | `300` | 搜索结果缓存时间（秒），0 表示禁用缓存 |
+| `extract_max_length` | int | `8000` | 网页正文提取最大字符数（预留，待专业版启用） |
+
+### 获取 API Key
 
 1. 访问 [AnySearch 官网](https://www.anysearch.com) 注册账号
 2. 进入 [API Key 管理页面](https://anysearch.com/console/api-keys) 创建 API Key
 3. 免费额度：每日 1000 次调用、20 QPS，无需付费即可使用
 
-## 安装
+> 未配置 API Key 时以匿名模式运行，有较低的速率限制。
 
-### 通过 AstrBot 插件市场
+## 使用示例
 
-在 WebUI 插件市场搜索"AnySearch"直接安装。
-
-### 手动安装
-
-```bash
-cd AstrBot/data/plugins
-git clone https://github.com/NoFizz/astrbot_plugin_anysearch.git
-```
-
-然后在 WebUI 插件管理页面刷新并启用即可。
-
-## LLM 工具
-
-插件注册了 3 个 LLM 工具，LLM 会根据用户问题自动选择合适的工具：
+本插件注册了 3 个 LLM 工具，由 LLM 根据用户问题自动调用，用户无需手动触发。
 
 | 工具名 | 说明 | 触发场景 |
 |--------|------|----------|
@@ -44,7 +88,7 @@ git clone https://github.com/NoFizz/astrbot_plugin_anysearch.git
 | `anysearch_advanced_search` | 垂直能力标签搜索（42 种 tag） | "帮我查苹果公司财报"、"搜索 CVE-2024-1234 漏洞详情" |
 | `anysearch_extract` | 网页正文提取（当前不可用） | 待 AnySearch 官方发布专业版后启用 |
 
-## 垂直能力标签（42 种）
+### 垂直能力标签（42 种）
 
 使用 `anysearch_advanced_search` 时，通过 `tag` 参数指定能力标签（格式：`类别.子类别`）：
 
@@ -65,29 +109,15 @@ git clone https://github.com/NoFizz/astrbot_plugin_anysearch.git
 - `finance.quote` + `{"symbol": "AAPL", "type": "stock"}`
 - `security.vuln` + `{"type": "cve", "value": "CVE-2024-1234"}`
 
-## 插件配置
+## 依赖要求
 
-在 AstrBot WebUI 中配置以下参数：
+- Python >= 3.12
+- AstrBot >= 4.26.0
+- aiohttp >= 3.0.0
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `api_base` | string | `https://api.anysearch.com` | AnySearch API 地址 |
-| `api_key` | string | 空 | API Key（可选），在 anysearch.com 控制台获取 |
-| `max_results` | int | `10` | 最大返回结果数（1-20，用户自定义） |
-| `format` | string | `json` | 输出格式：`json` 或 `markdown` |
-| `zone` | string | `cn` | 搜索区域：`cn`（中国）或 `intl`（国际） |
-| `language` | string | `zh-CN` | 语言偏好 |
-| `timeout` | int | `15` | 请求超时时间（秒），最小值 3 |
-| `cache_ttl` | int | `300` | 搜索结果缓存时间（秒），0 表示禁用缓存 |
-| `extract_max_length` | int | `8000` | 网页正文提取最大字符数（预留，待专业版启用） |
+## 故障排查
 
-## 常见问题
-
-### API Key 在哪获取？
-
-访问 https://www.anysearch.com 注册账号，然后在 https://anysearch.com/console/api-keys 创建 API Key。免费额度为每日 1000 次调用。
-
-### 搜索无结果怎么办？
+### 搜索无结果
 
 1. 检查 `api_base` 配置是否正确
 2. 如果未配置 API Key，匿名模式有较低的速率限制，可能被限流
@@ -106,14 +136,12 @@ AnySearch 官方当前仅提供免费版，不支持 `/v1/extract` 端点。待�
 
 遇到网络错误、服务器 5xx 错误或 429 限流时，插件会自动重试最多 2 次，使用指数退避加随机抖动。429 响应会解析 `Retry-After` 头作为最小等待时间。401（认证失败）和 402（配额耗尽）不会重试。
 
-## 版本
+## 许可证
 
-**当前版本**：v1.0.0
+本项目基于 [AGPL-3.0](LICENSE) 许可证开源。
 
 ## 作者
 
-NoFizz
+**NoFizz** · [GitHub](https://github.com/NoFizz)
 
-## 许可证
-
-AGPL-3.0
+如遇问题或有功能建议，欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_anysearch/issues)。
