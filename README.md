@@ -61,7 +61,7 @@
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `api_base` | string | `https://api.anysearch.com` | AnySearch API 地址 |
-| `api_key` | string | 空 | API Key（可选），在 anysearch.com 控制台获取 |
+| `api_key` | string | 空 | API Key（必填），在 anysearch.com 控制台获取 |
 | `max_results` | int | `10` | 最大返回结果数（1-20，用户自定义） |
 | `format` | string | `json` | 输出格式：`json` 或 `markdown` |
 | `zone` | string | `cn` | 搜索区域：`cn`（中国）或 `intl`（国际） |
