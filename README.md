@@ -5,12 +5,17 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="version">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-green" alt="license">
-  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange" alt="AstrBot version">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat" alt="version">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
+  <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
+  <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
 基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 42 种垂直能力标签精准搜索。
+
+<p align="center">
+  <img src="https://count.getloli.com/@astrbot_plugin_anysearch?theme=moebooru" alt="Moe Counter">
+</p>
 
 ## 功能特性
 
