@@ -26,12 +26,11 @@ from .cache import SearchCache
 from .client import AnySearchClient
 from .models import (
     ALL_TAGS,
-    CATEGORY_LABELS,
     DEFAULT_API_BASE,
     DEFAULT_EXTRACT_MAX_LENGTH,
-    LEGACY_DOMAIN_HINTS,
     MAX_QUERY_LEN,
     MAX_URL_LEN,
+    TAG_DIRECTORY,
     AnySearchAPIError,
     AnySearchAuthError,
     AnySearchError,
@@ -188,19 +187,32 @@ class AnySearchPlugin(Star):
             ),
             FunctionTool(
                 name="anysearch_advanced_search",
-                description="垂直领域精准搜索。仅当查询明显属于特定垂直领域（漏洞/论文/行情/代码/法规/专利等）时使用；不确定时改用 anysearch_web_search 自动路由。",
+                description="垂直领域精准搜索。仅当查询明显属于特定垂直领域（漏洞/论文/行情/代码/法规/专利等）时使用；否则应使用 anysearch_web_search 普通搜索。",
                 parameters={
                     "type": "object",
                     "properties": {
                         "query": {"type": "string", "description": "搜索关键词"},
                         "tag": {
                             "type": "string",
-                            "description": "能力标签（可选），格式 类别.子类别，根据查询内容自行判断领域后填写。示例映射：CVE/漏洞/恶意扫描→security.vuln 或 security.scan；论文/文献→academic.search；股票行情/财报→finance.quote 或 finance.fundamental；代码库/框架文档→code.doc；法律法规→legal.statute；专利→ip.global。判断不了时省略本字段，API 自动路由。",
+                            "description": (
+                                "能力标签（可选），格式 类别.子类别，根据查询内容自行判断领域后填写。"
+                                "【重要】省略 tag 时即为普通搜索，API 自动路由到最佳数据源，搜索照常进行；"
+                                "不要因为没传 tag 而担心搜索失败，更不要强行编造一个不相关的 tag。"
+                                "完整 tag 目录（40 个）："
+                                + "; ".join(
+                                    f"{cat}: {', '.join(tags)}"
+                                    for cat, tags in TAG_DIRECTORY.items()
+                                )
+                            ),
                         },
                         "params": {
                             "type": "object",
                             "additionalProperties": True,
-                            "description": '扩展参数对象（可选），如 {"library":"react"} 或 {"symbol":"AAPL"}。仅当所选 tag 需要特定参数时填写。',
+                            "description": (
+                                '扩展参数对象（可选），如 {"library":"react"} 或 {"symbol":"AAPL"}。'
+                                "【重要】仅当所选 tag 明确需要特定参数时才填写；"
+                                "不需要参数或不确定时省略，不要硬凑无关参数。"
+                            ),
                         },
                     },
                     "required": ["query"],
@@ -350,16 +362,13 @@ class AnySearchPlugin(Star):
         if len(query) > MAX_QUERY_LEN:
             return "搜索失败：关键词过长。"
 
-        # tag 校验：不在 40 个能力标签内时给出友好提示
+        # tag 校验：无效 tag 降级为普通搜索（不阻塞搜索，避免 LLM 硬凑参数）
         tag = (tag or "").strip()
         if tag and tag not in ALL_TAGS:
-            if "." not in tag and tag.lower() in LEGACY_DOMAIN_HINTS:
-                hints = LEGACY_DOMAIN_HINTS[tag.lower()]
-                return f"搜索失败：'{tag}' 不是有效的能力标签。该领域可用的标签: {hints}。请使用 '类别.子类别' 格式，如 'finance.quote'。"
-            categories = "/".join(CATEGORY_LABELS.values())
-            return f"搜索失败：'{tag}' 不是有效的能力标签。可用类别: {categories}。请使用 '类别.子类别' 格式，如 'code.doc'。"
+            logger.warning(f"能力标签 '{tag}' 无效，已忽略并按普通搜索处理（自动路由）")
+            tag = ""
 
-        # params 兼容 dict 或 JSON 字符串
+        # params 兼容 dict 或 JSON 字符串；解析失败/非对象时降级为不传
         parsed_params: dict | None = None
         if isinstance(params, dict):
             parsed_params = params
@@ -369,9 +378,13 @@ class AnySearchPlugin(Star):
                 try:
                     parsed = json.loads(raw)
                 except (json.JSONDecodeError, ValueError, TypeError):
-                    return f'搜索失败：params 不是合法的 JSON。收到: \'{raw[:100]}\'。请使用如 {{"library":"react"}} 的格式。'
+                    logger.warning(
+                        f"params 不是合法的 JSON，已忽略并按普通搜索处理: {raw[:100]}"
+                    )
+                    parsed = None
                 if not isinstance(parsed, dict):
-                    return '搜索失败：params 必须是 JSON 对象格式，如 {"library":"react"}。'
+                    logger.warning("params 不是 JSON 对象，已忽略并按普通搜索处理")
+                    parsed = None
                 parsed_params = parsed
 
         logger.info(
