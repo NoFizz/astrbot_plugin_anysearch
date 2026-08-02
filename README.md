@@ -1,7 +1,7 @@
-<h1 align="center">AnySearch 智能搜索/astrbot_plugin_anysearch</h1>
+<h1 align="center">AnySearch 智能搜索/astrbot_plugin_anysearch_x</h1>
 
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="astrbot_plugin_anysearch logo">
+  <img src="logo.png" width="128" height="128" alt="astrbot_plugin_anysearch_x logo">
 </p>
 
 <p align="center">
@@ -14,7 +14,7 @@
 基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 42 种垂直能力标签精准搜索。
 
 <p align="center">
-  <img src="https://count.getloli.com/@astrbot_plugin_anysearch?theme=moebooru" alt="Moe Counter">
+  <img src="https://count.getloli.com/@astrbot_plugin_anysearch_x?theme=moebooru" alt="Moe Counter">
 </p>
 
 ## 功能特性
@@ -36,7 +36,7 @@
 2. 添加插件源（如尚未添加）：
    - 源名称：`AstrBot Official Plugin Market`
    - 源地址：`https://cloud-test.astrbot.app/api/v1/market/plugins.json`
-3. 在插件市场中搜索 **AnySearch 智能搜索**（`astrbot_plugin_anysearch`），点击安装。
+3. 在插件市场中搜索 **AnySearch 智能搜索**（`astrbot_plugin_anysearch_x`），点击安装。
 4. 等待安装完成，确认插件已启用。
 
 ### 方法二：从 GitHub 安装
@@ -45,7 +45,7 @@
 2. 选择 **从 GitHub 安装**。
 3. 填入仓库地址：
    ```
-   https://github.com/NoFizz/astrbot_plugin_anysearch
+   https://github.com/NoFizz/astrbot_plugin_anysearch_x
    ```
 4. 等待安装完成，确认插件已启用。
 
@@ -54,11 +54,11 @@
 1. 将本仓库克隆或下载到 AstrBot 的插件目录：
    ```bash
    cd AstrBot/data/plugins
-   git clone https://github.com/NoFizz/astrbot_plugin_anysearch.git
+   git clone https://github.com/NoFizz/astrbot_plugin_anysearch_x.git
    ```
 2. 安装依赖：
    ```bash
-   pip install -r astrbot_plugin_anysearch/requirements.txt
+   pip install -r astrbot_plugin_anysearch_x/requirements.txt
    ```
 3. 在 AstrBot WebUI 中重载插件，或重启 AstrBot。
 
@@ -158,4 +158,4 @@ AnySearch 官方当前仅提供免费版，不支持 `/v1/extract` 端点。待�
 
 **NoFizz** · [GitHub](https://github.com/NoFizz)
 
-如遇问题或有功能建议，欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_anysearch/issues)。
+如遇问题或有功能建议，欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_anysearch_x/issues)。

@@ -140,7 +140,7 @@ def _decrypt_api_key(encoded: str, secret: str = "astrbot_anysearch") -> str:
 # 免费版限制（AnySearch 官方当前仅提供 Free 版：1000次/天、20QPS、不支持 extract）
 
 
-@register("astrbot_plugin_anysearch", "NoFizz", "基于 AnySearch API 的智能搜索插件，支持42种垂直搜索能力", "1.0.0", "https://github.com/NoFizz/astrbot_plugin_anysearch")
+@register("astrbot_plugin_anysearch_x", "NoFizz", "基于 AnySearch API 的智能搜索插件，支持42种垂直搜索能力", "1.0.0", "https://github.com/NoFizz/astrbot_plugin_anysearch_x")
 class AnySearchPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
