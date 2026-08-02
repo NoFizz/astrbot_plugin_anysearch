@@ -16,9 +16,9 @@ import json
 import time
 
 import aiohttp
-from cache import SearchCache
-from client import AnySearchClient
-from models import (
+from .cache import SearchCache
+from .client import AnySearchClient
+from .models import (
     ALL_TAGS,
     CATEGORY_LABELS,
     DEFAULT_API_BASE,

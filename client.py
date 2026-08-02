@@ -12,7 +12,7 @@ from collections.abc import Callable
 from typing import Any
 
 import aiohttp
-from models import (
+from .models import (
     DEFAULT_API_BASE,
     DEFAULT_EXTRACT_MAX_LENGTH,
     EXTRACT_TIMEOUT_SEC,
