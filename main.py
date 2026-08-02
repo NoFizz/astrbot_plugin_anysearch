@@ -31,6 +31,7 @@ from .models import (
     MAX_QUERY_LEN,
     MAX_URL_LEN,
     TAG_DIRECTORY,
+    TAG_REQUIRED_PARAMS,
     AnySearchAPIError,
     AnySearchAuthError,
     AnySearchError,
@@ -38,6 +39,14 @@ from .models import (
 )
 
 # ─── 结果格式化（模块级纯函数）────────────────────────────────────────────────
+
+
+def _annotate_tag(tag: str) -> str:
+    """为必填参数 tag 追加标注，如 'code.doc' → 'code.doc(需 library)'。"""
+    reqs = TAG_REQUIRED_PARAMS.get(tag)
+    if not reqs:
+        return tag
+    return f"{tag}(需 {','.join(reqs)})"
 
 
 def format_search_results(results: list[dict], output_format: str = "json") -> str:
@@ -201,9 +210,10 @@ class AnySearchPlugin(Star):
                                 "（可选）能力标签，格式 类别.子类别，根据查询内容自行判断领域后填写。"
                                 "【重要】省略 tag 即为普通搜索，API 自动路由到最佳数据源，搜索照常进行、不会失败；"
                                 "不要因为没传 tag 而担心搜索失败，更不要强行编造一个不相关的 tag。"
+                                "标注 (需 xxx) 的 tag 必须在 params 中提供对应参数，否则会报错。"
                                 "完整 tag 目录（40 个）："
                                 + "; ".join(
-                                    f"{cat}: {', '.join(tags)}"
+                                    f"{cat}: {', '.join(_annotate_tag(t) for t in tags)}"
                                     for cat, tags in TAG_DIRECTORY.items()
                                 )
                             ),
@@ -365,14 +375,19 @@ class AnySearchPlugin(Star):
         if len(query) > MAX_QUERY_LEN:
             return "搜索失败：关键词过长。"
 
+        # 降级提示前缀（结果返回给 LLM 时可见，帮助 LLM 自纠）
+        degraded_notices: list[str] = []
+
         # tag 校验：无效 tag 降级为普通搜索（不阻塞搜索，避免 LLM 硬凑参数）
         tag = (tag or "").strip()
         if tag and tag not in ALL_TAGS:
             logger.warning(f"能力标签 '{tag}' 无效，已忽略并按普通搜索处理（自动路由）")
+            degraded_notices.append(f"[tag '{tag}' 无效，已按普通搜索处理]")
             tag = ""
 
         # params 兼容 dict 或 JSON 字符串；解析失败/非对象时降级为不传
         parsed_params: dict | None = None
+        params_degraded = False
         if isinstance(params, dict):
             parsed_params = params
         else:
@@ -384,11 +399,27 @@ class AnySearchPlugin(Star):
                     logger.warning(
                         f"params 不是合法的 JSON，已忽略并按普通搜索处理: {raw[:100]}"
                     )
+                    degraded_notices.append("[params 无效，已按普通搜索处理]")
+                    params_degraded = True
                     parsed = None
                 if not isinstance(parsed, dict):
-                    logger.warning("params 不是 JSON 对象，已忽略并按普通搜索处理")
+                    logger.warning("params 不是 JSON 对象，已按普通搜索处理")
+                    degraded_notices.append("[params 无效，已按普通搜索处理]")
+                    params_degraded = True
                     parsed = None
                 parsed_params = parsed
+
+        # 必填参数校验：所选 tag 缺少必填 params 时直接友好提示（不发请求，避免 400 循环）。
+        # params 已降级（无效）时跳过校验——降级即按普通搜索处理，无需再校验。
+        if not params_degraded and tag and tag in TAG_REQUIRED_PARAMS:
+            missing = [
+                p for p in TAG_REQUIRED_PARAMS[tag] if not (parsed_params or {}).get(p)
+            ]
+            if missing:
+                return (
+                    f"搜索失败：tag '{tag}' 需要 params 参数 {', '.join(missing)}。"
+                    f"请在 params 中提供，如 {json.dumps({missing[0]: '示例值'}, ensure_ascii=False)}。"
+                )
 
         logger.info(
             f"高级搜索: query='{query}', tag='{tag}', params={parsed_params or None}"
@@ -401,7 +432,10 @@ class AnySearchPlugin(Star):
         cache_key = SearchCache.make_key(
             "search", query, tag, params_json, self.max_results, self.output_format
         )
-        return await self._run_search(query, tag or None, parsed_params, cache_key)
+        result = await self._run_search(query, tag or None, parsed_params, cache_key)
+        if degraded_notices:
+            return " ".join(degraded_notices) + "\n" + result
+        return result
 
     async def _extract_tool(self, event: AstrMessageEvent, url: str) -> str:
         """网页正文提取工具：返回 Markdown 文本。"""

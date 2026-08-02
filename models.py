@@ -179,6 +179,29 @@ ALL_TAGS: list[str] = sorted({tag for tags in TAG_DIRECTORY.values() for tag in 
 TAG_COUNT = len(ALL_TAGS)
 CATEGORY_COUNT = len(TAG_DIRECTORY)
 
+# ─── tag -> 必填 params ──────────────────────────────────────────────────
+# 依据官方 get_sub_domains 的 (required) 标注；仅收录无条件必填字段
+# （条件必填如 finance.fundamental 的 symbol/cn_code 按 type 而定，不在此列，
+#   由 API 400 自纠兜底）。用于工具描述标注与 handler 层缺参校验。
+TAG_REQUIRED_PARAMS: dict[str, list[str]] = {
+    "academic.citation": ["id"],
+    "code.doc": ["library"],
+    "finance.calendar": ["type"],
+    "finance.fundamental": ["type"],
+    "finance.macro": ["type"],
+    "finance.news": ["type"],
+    "finance.quote": ["type"],
+    "finance.screen": ["type"],
+    "gaming.esports": ["type"],
+    "health.drug": ["type"],
+    "security.intel": ["ioc"],
+    "security.noise": ["ip"],
+    "security.scan": ["ioc"],
+    "security.vuln": ["type", "value"],
+    "travel.flight": ["departure", "arrival", "date"],
+    "travel.flight_status": ["date", "departure", "arrival"],
+}
+
 
 # ─── 旧版域错误提示 ─────────────────────────────────────────────────────
 # 从 v1 main.py 平移，仅用于将旧版域参数转换为建议 tag 的用户友好错误提示
