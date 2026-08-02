@@ -9,7 +9,7 @@
         "type": "string",
         "description": "API Key",
         "default": "",
-        "hint": "在 anysearch.com 控制台获取，每日 1000 次免费调用；未配置时以匿名模式运行（限流较低）",
+        "hint": "https://www.anysearch.com/console/api-keys",
         "obvious_hint": true
     },
     "max_results": {
