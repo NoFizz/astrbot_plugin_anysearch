@@ -5,13 +5,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat" alt="version">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue?style=flat" alt="version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
   <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
   <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
-基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 42 种垂直能力标签精准搜索。
+基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 40 种垂直能力标签精准搜索。
 
 <p align="center">
   <img src="https://count.getloli.com/@astrbot_plugin_anysearch_x?theme=moebooru" alt="Moe Counter">
@@ -20,13 +20,33 @@
 ## 功能特性
 
 - **通用搜索**：支持任意关键词的网页搜索，API 自动路由到最佳数据源
-- **垂直能力标签搜索**：42 种 tag 覆盖金融、学术、代码、法律、安全、医疗、商业、旅游等领域
+- **垂直能力标签搜索**：40 种 tag 覆盖金融、学术、代码、法律、安全、医疗、商业、旅游等领域
 - **自动触发**：LLM 根据用户问题自动判断是否需要搜索及使用哪个工具
 - **智能重试**：网络错误、服务器 5xx、429 限流自动重试（指数退避 + 随机抖动 + Retry-After 感知）
 - **结果缓存**：LRU + TTL 内存缓存，相同查询不重复调用 API
 - **请求指标**：统计请求量、成功率、缓存命中率、平均延迟，插件卸载时输出汇总
 - **连接池管理**：复用 HTTP Session，限制并发连接数，防止耗尽端口
 - **输入校验**：关键词最长 500 字符，URL 最长 2048 字符，仅允许 http/https 协议
+- **模块化架构**：models / client / cache / main 分层组织，单向依赖，便于维护与测试
+- **402 免费额度自动恢复**：匿名调用遇每日免费配额用尽时，自动使用响应中返回的临时 Key 重试一次
+- **网页正文提取**：通过 MCP 协议提取网页正文（markdown），匿名可用，超出长度自动截断
+
+## 插件架构
+
+### 模块结构
+
+插件按模块化架构组织，依赖方向为单向（箭头指向被依赖方）：
+
+```
+models ← client ← cache ← main
+```
+
+- `models.py`：异常层级、请求常量、40 个能力 tag 目录（17 类）
+- `client.py`：AnySearchClient，请求构造、错误映射、重试与 402 自动恢复、MCP 网页提取
+- `cache.py`：LRU + TTL 内存缓存
+- `main.py`：插件类、LLM 工具注册、指标统计、生命周期
+
+禁止反向 import（如 `client` 不得 import `main`）。
 
 ## 安装
 
@@ -82,7 +102,7 @@
 | `language` | string | `zh-CN` | 语言偏好 |
 | `timeout` | int | `15` | 请求超时时间（秒），最小值 3 |
 | `cache_ttl` | int | `300` | 搜索结果缓存时间（秒），0 表示禁用缓存 |
-| `extract_max_length` | int | `8000` | 网页正文提取最大字符数（预留，待专业版启用） |
+| `extract_max_length` | int | `8000` | 网页正文提取最大返回字符数（MCP 提取，超出截断） |
 
 ### 获取 API Key
 
@@ -90,7 +110,8 @@
 2. 进入 [API Key 管理页面](https://anysearch.com/console/api-keys) 创建 API Key
 3. 免费额度：每日 1000 次调用、20 QPS，无需付费即可使用
 
-> 未配置 API Key 时以匿名模式运行，有较低的速率限制。
+> 未配置 API Key 时以匿名模式运行，按 IP 限流（约每分钟 10 次请求）。
+> 匿名调用遇 402（每日免费配额用尽）时，插件会自动使用响应中返回的临时 Key 重试一次；配置 `api_key` 可获得完整免费额度（每日 1000 次、20 QPS）。
 
 ## 使用示例
 
@@ -99,10 +120,10 @@
 | 工具名 | 说明 | 触发场景 |
 |--------|------|----------|
 | `anysearch_web_search` | 通用网页搜索 | "今天有什么新闻？"、"搜索 Python 文档" |
-| `anysearch_advanced_search` | 垂直能力标签搜索（42 种 tag） | "帮我查苹果公司财报"、"搜索 CVE-2024-1234 漏洞详情" |
-| `anysearch_extract` | 网页正文提取（当前不可用） | 待 AnySearch 官方发布专业版后启用 |
+| `anysearch_advanced_search` | 垂直能力标签搜索（40 种 tag） | "帮我查苹果公司财报"、"搜索 CVE-2024-1234 漏洞详情" |
+| `anysearch_extract` | 网页正文提取（MCP，匿名可用） | 需要网页完整正文时 |
 
-### 垂直能力标签（42 种）
+### 垂直能力标签（40 种）
 
 使用 `anysearch_advanced_search` 时，通过 `tag` 参数指定能力标签（格式：`类别.子类别`）：
 
@@ -138,9 +159,9 @@
 3. 尝试切换 `zone` 配置（`cn` / `intl`）
 4. 检查网络连接是否正常
 
-### 网页提取为什么不可用？
+### 网页提取如何工作？
 
-AnySearch 官方当前仅提供免费版，不支持 `/v1/extract` 端点。待官方发布专业版后，插件将自动启用该功能。
+网页正文提取通过 MCP JSON-RPC 协议完成：插件向 `{api_base}/mcp` 端点发送 `tools/call extract` 请求，匿名即可使用。返回内容为 markdown 格式，超出 `extract_max_length`（默认 8000 字符）的部分会被截断。仅支持 http/https 协议链接。
 
 ### 缓存如何工作？
 
@@ -148,7 +169,7 @@ AnySearch 官方当前仅提供免费版，不支持 `/v1/extract` 端点。待�
 
 ### 重试机制如何工作？
 
-遇到网络错误、服务器 5xx 错误或 429 限流时，插件会自动重试最多 2 次，使用指数退避加随机抖动。429 响应会解析 `Retry-After` 头作为最小等待时间。401（认证失败）和 402（配额耗尽）不会重试。
+遇到网络错误、服务器 5xx 错误或 429 限流时，插件会自动重试最多 2 次，使用指数退避加随机抖动。429 响应会解析 `Retry-After` 头作为最小等待时间。401（认证失败）直接报错；402（配额耗尽）若响应携带自动注册的临时 Key 会自动重试一次，否则直接报错。
 
 ## 许可证
 
