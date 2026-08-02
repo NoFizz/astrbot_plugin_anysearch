@@ -120,12 +120,12 @@ models ← client ← cache ← main
 | 工具名 | 说明 | 触发场景 |
 |--------|------|----------|
 | `anysearch_web_search` | 通用网页搜索 | "今天有什么新闻？"、"搜索 Python 文档" |
-| `anysearch_advanced_search` | 垂直能力标签搜索（40 种 tag） | "帮我查苹果公司财报"、"搜索 CVE-2024-1234 漏洞详情" |
+| `anysearch_advanced_search` | 垂直领域精准搜索（LLM 根据查询自动判断领域，可省略 tag 走自动路由） | "帮我查苹果公司财报"、"搜索 CVE-2024-1234 漏洞详情" |
 | `anysearch_extract` | 网页正文提取（MCP，匿名可用） | 需要网页完整正文时 |
 
 ### 垂直能力标签（40 种）
 
-使用 `anysearch_advanced_search` 时，通过 `tag` 参数指定能力标签（格式：`类别.子类别`）：
+`anysearch_advanced_search` 的 `tag` 参数为可选（格式：`类别.子类别`），由 LLM 根据查询内容自动判断领域后填写；**判断不了时省略 tag，API 自动路由**。以下目录供参考：
 
 | 类别 | 可用标签 |
 |------|----------|

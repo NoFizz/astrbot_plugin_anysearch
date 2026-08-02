@@ -188,20 +188,19 @@ class AnySearchPlugin(Star):
             ),
             FunctionTool(
                 name="anysearch_advanced_search",
-                description="在特定垂直领域进行精准搜索，支持 40 种专业能力标签。",
+                description="垂直领域精准搜索。仅当查询明显属于特定垂直领域（漏洞/论文/行情/代码/法规/专利等）时使用；不确定时改用 anysearch_web_search 自动路由。",
                 parameters={
                     "type": "object",
                     "properties": {
                         "query": {"type": "string", "description": "搜索关键词"},
                         "tag": {
                             "type": "string",
-                            "enum": ALL_TAGS,
-                            "description": "能力标签，格式 类别.子类别。类别：学术/农业/商业/代码/能源/环境/影视/金融/电竞/通用/医疗健康/专利/法律/资源/安全/社交媒体/旅行",
+                            "description": "能力标签（可选），格式 类别.子类别，根据查询内容自行判断领域后填写。示例映射：CVE/漏洞/恶意扫描→security.vuln 或 security.scan；论文/文献→academic.search；股票行情/财报→finance.quote 或 finance.fundamental；代码库/框架文档→code.doc；法律法规→legal.statute；专利→ip.global。判断不了时省略本字段，API 自动路由。",
                         },
                         "params": {
                             "type": "object",
                             "additionalProperties": True,
-                            "description": '扩展参数对象，如 {"library":"react"}。不需要时省略',
+                            "description": '扩展参数对象（可选），如 {"library":"react"} 或 {"symbol":"AAPL"}。仅当所选 tag 需要特定参数时填写。',
                         },
                     },
                     "required": ["query"],
