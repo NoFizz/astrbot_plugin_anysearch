@@ -178,7 +178,7 @@ class AnySearchPlugin(Star):
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "搜索关键词，将用户问题转换为简洁的搜索词",
+                            "description": "（必填）搜索关键词，将用户问题转换为简洁的搜索词",
                         }
                     },
                     "required": ["query"],
@@ -187,16 +187,19 @@ class AnySearchPlugin(Star):
             ),
             FunctionTool(
                 name="anysearch_advanced_search",
-                description="垂直领域精准搜索。仅当查询明显属于特定垂直领域（漏洞/论文/行情/代码/法规/专利等）时使用；否则应使用 anysearch_web_search 普通搜索。",
+                description="垂直领域精准搜索。当查询明显属于特定垂直领域（漏洞/论文/行情/代码/法规/专利/航班/药品等）时使用，可提升结果精度。tag 参数为可选：省略 tag 即按普通搜索自动路由，搜索照常成功；不确定领域时请改用 anysearch_web_search。",
                 parameters={
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string", "description": "搜索关键词"},
+                        "query": {
+                            "type": "string",
+                            "description": "（必填）搜索关键词",
+                        },
                         "tag": {
                             "type": "string",
                             "description": (
-                                "能力标签（可选），格式 类别.子类别，根据查询内容自行判断领域后填写。"
-                                "【重要】省略 tag 时即为普通搜索，API 自动路由到最佳数据源，搜索照常进行；"
+                                "（可选）能力标签，格式 类别.子类别，根据查询内容自行判断领域后填写。"
+                                "【重要】省略 tag 即为普通搜索，API 自动路由到最佳数据源，搜索照常进行、不会失败；"
                                 "不要因为没传 tag 而担心搜索失败，更不要强行编造一个不相关的 tag。"
                                 "完整 tag 目录（40 个）："
                                 + "; ".join(
@@ -209,7 +212,7 @@ class AnySearchPlugin(Star):
                             "type": "object",
                             "additionalProperties": True,
                             "description": (
-                                '扩展参数对象（可选），如 {"library":"react"} 或 {"symbol":"AAPL"}。'
+                                '（可选）扩展参数对象，如 {"library":"react"} 或 {"symbol":"AAPL"}。'
                                 "【重要】仅当所选 tag 明确需要特定参数时才填写；"
                                 "不需要参数或不确定时省略，不要硬凑无关参数。"
                             ),
@@ -227,7 +230,7 @@ class AnySearchPlugin(Star):
                     "properties": {
                         "url": {
                             "type": "string",
-                            "description": "要提取内容的网页完整 URL，仅支持 http/https",
+                            "description": "（必填）要提取内容的网页完整 URL，仅支持 http/https",
                         }
                     },
                     "required": ["url"],
