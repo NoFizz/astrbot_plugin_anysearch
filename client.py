@@ -3,6 +3,7 @@
 封装 /v1/search 与 /mcp 的请求构造、错误映射与重试策略；session 由外部注入，
 客户端不创建/关闭会话，零 astrbot 依赖。仅 import aiohttp + models + 标准库。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -12,6 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 import aiohttp
+
 from .models import (
     DEFAULT_API_BASE,
     DEFAULT_EXTRACT_MAX_LENGTH,
@@ -141,8 +143,14 @@ class AnySearchClient:
             # 耗尽后抛最后错误（429 为保留权威 retry_after 的限流异常）
             if status in RETRYABLE_STATUSES:
                 if status == 429 and self._debug_logger is not None:
-                    rate_headers = {k: v for k, v in resp_headers.items() if k.lower().startswith("x-ratelimit")}
-                    self._debug_logger.debug("rate limit reached", {"headers": rate_headers})
+                    rate_headers = {
+                        k: v
+                        for k, v in resp_headers.items()
+                        if k.lower().startswith("x-ratelimit")
+                    }
+                    self._debug_logger.debug(
+                        "rate limit reached", {"headers": rate_headers}
+                    )
                 retry_after = self._parse_retry_after(body, resp_headers)
                 try:
                     self._raise_for_status(status, body, resp_headers)
@@ -156,7 +164,11 @@ class AnySearchClient:
                 try:
                     self._raise_for_status(status, body, resp_headers)
                 except AnySearchQuotaExhaustedError as exc:
-                    if exc.symbol == "daily_free_quota_exhausted" and exc.auto_api_key and self._auto_issued_api_key is None:
+                    if (
+                        exc.symbol == "daily_free_quota_exhausted"
+                        and exc.auto_api_key
+                        and self._auto_issued_api_key is None
+                    ):
                         self._auto_issued_api_key = exc.auto_api_key
                         headers = self._auth_headers(exc.auto_api_key)
                         continue
@@ -194,9 +206,14 @@ class AnySearchClient:
             raise AnySearchError(f"URL 长度超出限制（{len(url)} > {MAX_URL_LEN}）")
 
         endpoint = f"{self._api_base}{MCP_ENDPOINT}"
-        headers: dict[str, str] = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
+        headers: dict[str, str] = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
         if self._auto_issued_api_key or self._api_key:
-            headers["Authorization"] = f"Bearer {self._auto_issued_api_key or self._api_key}"
+            headers["Authorization"] = (
+                f"Bearer {self._auto_issued_api_key or self._api_key}"
+            )
 
         call_payload: dict[str, Any] = {
             "jsonrpc": "2.0",
@@ -212,7 +229,10 @@ class AnySearchClient:
             "params": {
                 "protocolVersion": "2025-03-26",
                 "capabilities": {},
-                "clientInfo": {"name": "astrbot_plugin_anysearch_x", "version": "2.0.0"},
+                "clientInfo": {
+                    "name": "astrbot_plugin_anysearch_x",
+                    "version": "2.0.0",
+                },
             },
         }
 
@@ -232,7 +252,9 @@ class AnySearchClient:
                     raise AnySearchError(str(error.get("message") or "MCP 调用失败"))
 
         content_items = (body.get("result") or {}).get("content") or []
-        text_parts = [item.get("text", "") for item in content_items if item.get("type") == "text"]
+        text_parts = [
+            item.get("text", "") for item in content_items if item.get("type") == "text"
+        ]
         return "".join(text_parts)[: self._extract_max_length]
 
     # ─── 内部工具 ─────────────────────────────────────────────────────────
@@ -270,7 +292,7 @@ class AnySearchClient:
             return
         if self._retry_callback is not None:
             self._retry_callback()
-        await asyncio.sleep(max(2 ** attempt + random.uniform(0, 1), retry_after or 0))
+        await asyncio.sleep(max(2**attempt + random.uniform(0, 1), retry_after or 0))
 
     @staticmethod
     def _raise_for_status(status: int, body: dict, headers=None) -> None:
@@ -287,8 +309,12 @@ class AnySearchClient:
         # 配额耗尽：daily_free 携带自动 Key（供调用方换 Key 恢复）
         if status == 402:
             data = body.get("data") or {}
-            auto_api_key = data.get("api_key") if symbol == "daily_free_quota_exhausted" else None
-            raise AnySearchQuotaExhaustedError(message, symbol=symbol, auto_api_key=auto_api_key)
+            auto_api_key = (
+                data.get("api_key") if symbol == "daily_free_quota_exhausted" else None
+            )
+            raise AnySearchQuotaExhaustedError(
+                message, symbol=symbol, auto_api_key=auto_api_key
+            )
 
         # 限流：携带权威 retry_after 与配额信息，供调用方决策
         if status == 429:

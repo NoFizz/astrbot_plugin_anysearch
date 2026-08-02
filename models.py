@@ -8,6 +8,7 @@
 
 约定：仅 import 标准库；禁止 import 插件内其他模块（client/cache/main）。
 """
+
 from __future__ import annotations
 
 # ─── 异常层级 ───────────────────────────────────────────────────────────
@@ -47,7 +48,9 @@ class AnySearchRateLimitError(AnySearchError):
         reset_at: 配额重置时间（ISO 8601 字符串）。
     """
 
-    def __init__(self, message, retry_after=None, limit=None, remaining=None, reset_at=None):
+    def __init__(
+        self, message, retry_after=None, limit=None, remaining=None, reset_at=None
+    ):
         super().__init__(message)
         self.retry_after = retry_after
         self.limit = limit

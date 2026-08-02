@@ -9,6 +9,7 @@ SIZE_OK（~300 纯 LOC）: AstrBot 插件框架约定 main.py 为唯一入口；
 与 PluginMetrics 由 v2 规范要求置于本模块，HTTP 层（client/cache/models）已独立拆分，
 此处为框架门面 + 两个测试面纯组件，再拆分将破坏框架加载约定。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,6 +17,11 @@ import json
 import time
 
 import aiohttp
+
+from astrbot.api import AstrBotConfig, FunctionTool, logger
+from astrbot.api.event import AstrMessageEvent
+from astrbot.api.star import Context, Star, register
+
 from .cache import SearchCache
 from .client import AnySearchClient
 from .models import (
@@ -31,11 +37,8 @@ from .models import (
     AnySearchError,
 )
 
-from astrbot.api import AstrBotConfig, FunctionTool, logger
-from astrbot.api.event import AstrMessageEvent
-from astrbot.api.star import Context, Star, register
-
 # ─── 结果格式化（模块级纯函数）────────────────────────────────────────────────
+
 
 def format_search_results(results: list[dict], output_format: str = "json") -> str:
     """将搜索结果列表格式化为文本（按 URL 去重）。
@@ -73,6 +76,7 @@ def format_search_results(results: list[dict], output_format: str = "json") -> s
 
 
 # ─── 指标统计 ───────────────────────────────────────────────────────────────────
+
 
 class PluginMetrics:
     """轻量级请求指标统计。"""
@@ -114,7 +118,14 @@ class PluginMetrics:
 
 # ─── 插件主体 ───────────────────────────────────────────────────────────────────
 
-@register("astrbot_plugin_anysearch_x", "NoFizz", "基于 AnySearch API 的智能搜索插件，支持 40 种垂直搜索能力", "2.0.0", "https://github.com/NoFizz/astrbot_plugin_anysearch_x")
+
+@register(
+    "astrbot_plugin_anysearch_x",
+    "NoFizz",
+    "基于 AnySearch API 的智能搜索插件，支持 40 种垂直搜索能力",
+    "2.0.0",
+    "https://github.com/NoFizz/astrbot_plugin_anysearch_x",
+)
 class AnySearchPlugin(Star):
     """AnySearch 搜索插件：向 LLM 暴露三个可调用工具（通用搜索/垂直搜索/网页提取）。"""
 
@@ -131,21 +142,27 @@ class AnySearchPlugin(Star):
 
         if not self.api_key:
             logger.warning("未配置 API Key，将以匿名模式运行（速率限制较低）")
-        logger.info(f"已加载，max_results={self.max_results}，输出格式={self.output_format}")
+        logger.info(
+            f"已加载，max_results={self.max_results}，输出格式={self.output_format}"
+        )
 
         self._session: aiohttp.ClientSession | None = None
         self._client: AnySearchClient | None = None
         self._session_lock = asyncio.Lock()
         self._closed = False
         self._timeout_sec: int = max(3, int(config.get("timeout", 15)))
-        self._extract_max_length: int = int(config.get("extract_max_length", DEFAULT_EXTRACT_MAX_LENGTH))
+        self._extract_max_length: int = int(
+            config.get("extract_max_length", DEFAULT_EXTRACT_MAX_LENGTH)
+        )
         self._semaphore = asyncio.Semaphore(3)
         self._metrics = PluginMetrics()
         self._warned_auto_key = False
 
         # 缓存：cache_ttl=0 时禁用
         cache_ttl = int(config.get("cache_ttl", 300))
-        self.cache: SearchCache | None = SearchCache(ttl=cache_ttl) if cache_ttl > 0 else None
+        self.cache: SearchCache | None = (
+            SearchCache(ttl=cache_ttl) if cache_ttl > 0 else None
+        )
 
         context.add_llm_tools(*self._build_tools())
 
@@ -230,7 +247,9 @@ class AnySearchPlugin(Star):
                         enable_cleanup_closed=True,
                     )
                     timeout = aiohttp.ClientTimeout(total=self._timeout_sec)
-                    self._session = aiohttp.ClientSession(timeout=timeout, connector=connector)
+                    self._session = aiohttp.ClientSession(
+                        timeout=timeout, connector=connector
+                    )
                     self._client = AnySearchClient(
                         self._session,
                         api_base=self.api_base,
@@ -263,7 +282,9 @@ class AnySearchPlugin(Star):
 
     # ─── 搜索核心 ───────────────────────────────────────────────────────────────
 
-    async def _run_search(self, query: str, tag: str | None, params: dict | None, cache_key: str) -> str:
+    async def _run_search(
+        self, query: str, tag: str | None, params: dict | None, cache_key: str
+    ) -> str:
         """执行带缓存的搜索，返回格式化结果字符串（不抛异常）。
 
         Args:
@@ -283,11 +304,15 @@ class AnySearchPlugin(Star):
                 client = await self._ensure_client()
                 start_ms = time.monotonic() * 1000
                 results, metadata = await client.search(query, tag=tag, params=params)
-                latency_ms = metadata.get("search_time_ms") or (time.monotonic() * 1000 - start_ms)
+                latency_ms = metadata.get("search_time_ms") or (
+                    time.monotonic() * 1000 - start_ms
+                )
                 self._metrics.record_success(latency_ms)
                 if client.auto_issued_api_key and not self._warned_auto_key:
                     self._warned_auto_key = True
-                    logger.warning("检测到 402 免费额度用尽，已使用自动注册的 API Key 重试。可在插件设置中配置 api_key 以获得更高配额")
+                    logger.warning(
+                        "检测到 402 免费额度用尽，已使用自动注册的 API Key 重试。可在插件设置中配置 api_key 以获得更高配额"
+                    )
             result = format_search_results(results, self.output_format)
             if self.cache:
                 self.cache.set(cache_key, result)
@@ -306,10 +331,18 @@ class AnySearchPlugin(Star):
         if len(query) > MAX_QUERY_LEN:
             return "搜索失败：关键词过长。"
         logger.info(f"搜索: query='{query}'")
-        cache_key = SearchCache.make_key("search", query, "", "", self.max_results, self.output_format)
+        cache_key = SearchCache.make_key(
+            "search", query, "", "", self.max_results, self.output_format
+        )
         return await self._run_search(query, None, None, cache_key)
 
-    async def _advanced_search(self, event: AstrMessageEvent, query: str, tag: str | None = None, params: dict | str | None = None) -> str:
+    async def _advanced_search(
+        self,
+        event: AstrMessageEvent,
+        query: str,
+        tag: str | None = None,
+        params: dict | str | None = None,
+    ) -> str:
         """垂直搜索工具：按能力标签在特定领域精准搜索。"""
         query = (query or "").strip()
         if not query:
@@ -336,14 +369,22 @@ class AnySearchPlugin(Star):
                 try:
                     parsed = json.loads(raw)
                 except (json.JSONDecodeError, ValueError, TypeError):
-                    return f"搜索失败：params 不是合法的 JSON。收到: '{raw[:100]}'。请使用如 {{\"library\":\"react\"}} 的格式。"
+                    return f'搜索失败：params 不是合法的 JSON。收到: \'{raw[:100]}\'。请使用如 {{"library":"react"}} 的格式。'
                 if not isinstance(parsed, dict):
                     return '搜索失败：params 必须是 JSON 对象格式，如 {"library":"react"}。'
                 parsed_params = parsed
 
-        logger.info(f"高级搜索: query='{query}', tag='{tag}', params={parsed_params or None}")
-        params_json = json.dumps(parsed_params, sort_keys=True, ensure_ascii=False) if parsed_params else ""
-        cache_key = SearchCache.make_key("search", query, tag, params_json, self.max_results, self.output_format)
+        logger.info(
+            f"高级搜索: query='{query}', tag='{tag}', params={parsed_params or None}"
+        )
+        params_json = (
+            json.dumps(parsed_params, sort_keys=True, ensure_ascii=False)
+            if parsed_params
+            else ""
+        )
+        cache_key = SearchCache.make_key(
+            "search", query, tag, params_json, self.max_results, self.output_format
+        )
         return await self._run_search(query, tag or None, parsed_params, cache_key)
 
     async def _extract_tool(self, event: AstrMessageEvent, url: str) -> str:
