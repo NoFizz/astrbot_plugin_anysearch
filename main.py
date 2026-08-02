@@ -2,7 +2,7 @@
 
 v2 重构要点（相对 v1）:
 - 工具注册改用 FunctionTool + context.add_llm_tools（不再使用装饰器式工具注解）；
-- HTTP 请求全部委托给 client.AnySearchClient（重试/错误映射/402 自动换 Key 在客户端内完成）；
+- HTTP 请求全部委托给 client.AnySearchClient（重试/错误映射/配额耗尽提示在客户端内完成）；
 - API Key 原样透传（不再解密混淆）；日志不使用插件名前缀。
 
 SIZE_OK（~300 纯 LOC）: AstrBot 插件框架约定 main.py 为唯一入口；format_search_results
@@ -35,6 +35,7 @@ from .models import (
     AnySearchAPIError,
     AnySearchAuthError,
     AnySearchError,
+    AnySearchQuotaExhaustedError,
 )
 
 # ─── 结果格式化（模块级纯函数）────────────────────────────────────────────────
@@ -156,7 +157,6 @@ class AnySearchPlugin(Star):
         )
         self._semaphore = asyncio.Semaphore(3)
         self._metrics = PluginMetrics()
-        self._warned_auto_key = False
 
         # 缓存：cache_ttl=0 时禁用
         cache_ttl = int(config.get("cache_ttl", 300))
@@ -271,6 +271,12 @@ class AnySearchPlugin(Star):
         """将异常转换为用户友好的中文提示。"""
         if isinstance(e, AnySearchAuthError):
             return f"{prefix}：API Key 无效或已过期。请在插件设置中配置正确的 API Key。"
+        if isinstance(e, AnySearchQuotaExhaustedError):
+            # 额度用尽：明确报错，提示用户配置 Key（无自动注册/自动恢复）
+            logger.error(
+                f"{prefix}：API 配额已用尽（symbol: {e.symbol}），请在插件设置中配置 API Key 或等待额度重置"
+            )
+            return f"{prefix}：API 配额已用尽。请在插件设置中配置 API Key，或等待额度重置。"
         if isinstance(e, aiohttp.ClientConnectorError):
             return f"{prefix}：无法连接到 AnySearch 服务器，请检查网络。"
         if isinstance(e, asyncio.TimeoutError):
@@ -308,11 +314,6 @@ class AnySearchPlugin(Star):
                     time.monotonic() * 1000 - start_ms
                 )
                 self._metrics.record_success(latency_ms)
-                if client.auto_issued_api_key and not self._warned_auto_key:
-                    self._warned_auto_key = True
-                    logger.warning(
-                        "检测到 402 免费额度用尽，已使用自动注册的 API Key 重试。可在插件设置中配置 api_key 以获得更高配额"
-                    )
             result = format_search_results(results, self.output_format)
             if self.cache:
                 self.cache.set(cache_key, result)

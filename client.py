@@ -69,12 +69,6 @@ class AnySearchClient:
         self._extract_max_length = extract_max_length
         self._retry_callback = retry_callback
         self._debug_logger = debug_logger
-        # 402 自动恢复时保存的新 Key（初始为 None，恢复一次后不再触发）
-        self._auto_issued_api_key: str | None = None
-
-    @property
-    def auto_issued_api_key(self) -> str | None:
-        return self._auto_issued_api_key
 
     # ─── 搜索 ─────────────────────────────────────────────────────────────
 
@@ -97,7 +91,7 @@ class AnySearchClient:
         Raises:
             AnySearchError: 响应格式无效、业务 code != 0、重试耗尽。
             aiohttp.ClientConnectorError / asyncio.TimeoutError: 网络错误重试耗尽后上抛。
-            非 200 错误映射为 _raise_for_status 对应子类（402 自动换 Key 一次）。
+            非 200 错误映射为 _raise_for_status 对应子类（402 配额耗尽、401/403 认证失败等）。
         """
         payload: dict[str, Any] = {
             "query": query,
@@ -112,7 +106,7 @@ class AnySearchClient:
             payload["params"] = params
 
         url = f"{self._api_base}{SEARCH_ENDPOINT}"
-        headers = self._auth_headers(self._auto_issued_api_key or self._api_key)
+        headers = self._auth_headers(self._api_key)
         last_error: Exception | None = None
 
         for attempt in range(MAX_EXTRA_ATTEMPTS + 1):
@@ -159,22 +153,7 @@ class AnySearchClient:
                 await self._retry(attempt, retry_after)
                 continue
 
-            # 402 配额耗尽：daily_free 携带自动 Key 时换 Key 重试一次
-            if status == 402:
-                try:
-                    self._raise_for_status(status, body, resp_headers)
-                except AnySearchQuotaExhaustedError as exc:
-                    if (
-                        exc.symbol == "daily_free_quota_exhausted"
-                        and exc.auto_api_key
-                        and self._auto_issued_api_key is None
-                    ):
-                        self._auto_issued_api_key = exc.auto_api_key
-                        headers = self._auth_headers(exc.auto_api_key)
-                        continue
-                    raise
-
-            # 其余非 200（401/403/400/415...）直接映射错误
+            # 其余非 200（402 配额耗尽/401/403/400/415...）直接映射错误
             self._raise_for_status(status, body, resp_headers)
 
         if last_error is not None:
@@ -210,10 +189,8 @@ class AnySearchClient:
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
         }
-        if self._auto_issued_api_key or self._api_key:
-            headers["Authorization"] = (
-                f"Bearer {self._auto_issued_api_key or self._api_key}"
-            )
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
 
         call_payload: dict[str, Any] = {
             "jsonrpc": "2.0",
@@ -306,15 +283,9 @@ class AnySearchClient:
                 message = f"{message}（symbol: {symbol}）"
             raise AnySearchAuthError(message)
 
-        # 配额耗尽：daily_free 携带自动 Key（供调用方换 Key 恢复）
+        # 配额耗尽：按 symbol 区分（daily_free 匿名额度 / quota 付费额度 / user_daily 用户额度）
         if status == 402:
-            data = body.get("data") or {}
-            auto_api_key = (
-                data.get("api_key") if symbol == "daily_free_quota_exhausted" else None
-            )
-            raise AnySearchQuotaExhaustedError(
-                message, symbol=symbol, auto_api_key=auto_api_key
-            )
+            raise AnySearchQuotaExhaustedError(message, symbol=symbol)
 
         # 限流：携带权威 retry_after 与配额信息，供调用方决策
         if status == 429:
