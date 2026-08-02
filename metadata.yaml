@@ -1,8 +1,8 @@
 name: astrbot_plugin_anysearch_x
 author: NoFizz
-version: "1.0.0"
-description: "基于 AnySearch API v3 的 AI 智能搜索插件，支持通用搜索和 42 种垂直能力标签搜索（金融/学术/代码/法律/安全/医疗等）"
+version: "2.0.0"
+description: "基于 AnySearch API v3 的 AI 智能搜索插件，支持通用搜索和 40 种垂直能力标签搜索（金融/学术/代码/法律/安全/医疗等）"
 display_name: AnySearch 智能搜索
-short_desc: 基于 AnySearch API 的智能搜索插件，支持 42 种垂直搜索能力
+short_desc: 基于 AnySearch API 的智能搜索插件，支持 40 种垂直搜索能力
 repo: https://github.com/NoFizz/astrbot_plugin_anysearch_x
 astrbot_version: ">=4.26.0"

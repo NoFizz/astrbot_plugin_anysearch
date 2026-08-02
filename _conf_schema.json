@@ -9,7 +9,7 @@
         "type": "string",
         "description": "API Key",
         "default": "",
-        "hint": "在 anysearch.com 控制台获取，每日 1000 次免费调用",
+        "hint": "https://www.anysearch.com/console/api-keys",
         "obvious_hint": true
     },
     "max_results": {
@@ -57,6 +57,6 @@
         "type": "int",
         "description": "网页正文提取最大返回字符数",
         "default": 8000,
-        "hint": "超出部分将被截断，避免占用过多 LLM 上下文"
+        "hint": "网页正文提取最大返回字符数（MCP 提取，超出截断）"
     }
 }
