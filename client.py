@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import random
 import urllib.parse
 from collections.abc import Callable
@@ -212,15 +213,33 @@ class AnySearchClient:
                 },
             },
         }
+        # initialized 通知（无 id，规范要求 initialize 成功后必须发送）
+        initialized_payload: dict[str, Any] = {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized",
+        }
 
         body: dict = {}
-        for payload in (initialize_payload, call_payload):
+        session_id: str | None = None
+        for index, payload in enumerate(
+            (initialize_payload, initialized_payload, call_payload)
+        ):
             async with await self._session.post(
                 endpoint,
                 json=payload,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=EXTRACT_TIMEOUT_SEC),
             ) as resp:
+                # 记录 MCP session id（Streamable HTTP 会话管理），后续请求回传
+                if index == 0:
+                    raw_sid = getattr(resp, "headers", None)
+                    if raw_sid:
+                        session_id = raw_sid.get("Mcp-Session-Id")
+                        if session_id:
+                            headers["Mcp-Session-Id"] = session_id
+                # initialized 通知响应通常为 202 无 body，跳过解析
+                if index == 1:
+                    continue
                 body = await self._parse_json(resp)
                 if resp.status != 200:
                     self._raise_for_status(resp.status, body, resp.headers)
@@ -242,12 +261,26 @@ class AnySearchClient:
         return {"Authorization": f"Bearer {api_key}"} if api_key else {}
 
     async def _parse_json(self, resp) -> dict:
-        """解析响应 JSON；解析失败统一抛 AnySearchError。"""
+        """解析响应 JSON；优先 JSON 格式，SSE（text/event-stream）时解析 data: 行。"""
         try:
             body = await resp.json()
+            return body
         except (aiohttp.ContentTypeError, ValueError):
+            pass
+        # SSE 兜底：响应体为 event-stream 时逐行提取 "data: {json}" 的首个 JSON
+        try:
+            text = await resp.text()
+        except Exception:
             raise AnySearchError("服务器返回了无效的响应格式") from None
-        return body
+        for line in text.splitlines():
+            if line.startswith("data:"):
+                payload = line[5:].strip()
+                if payload:
+                    try:
+                        return json.loads(payload)
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+        raise AnySearchError("服务器返回了无效的响应格式")
 
     @staticmethod
     def _parse_retry_after(body: dict, headers) -> float | None:
