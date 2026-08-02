@@ -192,7 +192,7 @@ class AnySearchPlugin(Star):
                     },
                     "required": ["query"],
                 },
-                handler=self._web_search,
+                handler=AnySearchPlugin._web_search,
             ),
             FunctionTool(
                 name="anysearch_advanced_search",
@@ -230,7 +230,7 @@ class AnySearchPlugin(Star):
                     },
                     "required": ["query"],
                 },
-                handler=self._advanced_search,
+                handler=AnySearchPlugin._advanced_search,
             ),
             FunctionTool(
                 name="anysearch_extract",
@@ -245,7 +245,7 @@ class AnySearchPlugin(Star):
                     },
                     "required": ["url"],
                 },
-                handler=self._extract_tool,
+                handler=AnySearchPlugin._extract_tool,
             ),
         ]
 
