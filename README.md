@@ -1,7 +1,7 @@
-<h1 align="center">AnySearch 智能搜索/astrbot_plugin_anysearch_x</h1>
+<h1 align="center">AnySearch 全网搜索</h1>
 
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="astrbot_plugin_anysearch_x logo">
+  <img src="logo.png" width="128" height="128" alt="AnySearch 全网搜索 logo">
 </p>
 
 <p align="center">
@@ -11,7 +11,9 @@
   <img src="https://img.shields.io/badge/AstrBot->=4.26.0-orange?style=flat" alt="AstrBot version">
 </p>
 
+<p align="center">
 基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 40 种垂直能力标签精准搜索。
+</p>
 
 <p align="center">
   <img src="https://count.getloli.com/@astrbot_plugin_anysearch_x?theme=moebooru" alt="Moe Counter">
@@ -19,17 +21,12 @@
 
 ## 功能特性
 
-- **通用搜索**：支持任意关键词的网页搜索，API 自动路由到最佳数据源
-- **垂直能力标签搜索**：40 种 tag 覆盖金融、学术、代码、法律、安全、医疗、商业、旅游等领域
-- **自动触发**：LLM 根据用户问题自动判断是否需要搜索及使用哪个工具
-- **智能重试**：网络错误、服务器 5xx、429 限流自动重试（指数退避 + 随机抖动 + Retry-After 感知）
-- **结果缓存**：LRU + TTL 内存缓存，相同查询不重复调用 API
-- **请求指标**：统计请求量、成功率、缓存命中率、平均延迟，插件卸载时输出汇总
-- **连接池管理**：复用 HTTP Session，限制并发连接数，防止耗尽端口
-- **输入校验**：关键词最长 500 字符，URL 最长 2048 字符，仅允许 http/https 协议
-- **模块化架构**：models / client / cache / main 分层组织，单向依赖，便于维护与测试
-- **配额耗尽明确报错**：402 配额用尽时记录日志并返回友好提示，提示配置 API Key（不自动注册、不自动重试）
-- **网页正文提取**：通过 MCP 协议提取网页正文（markdown），匿名可用，超出长度自动截断
+- **AI 自动判断**：LLM 根据你的问题自动决定是否需要搜索，需要时直接调用，无需手动触发
+- **全网通用搜索**：任意关键词都能搜，自动匹配最合适的数据源
+- **40 个分类标签**：覆盖金融、学术、代码、法律、安全、医疗、旅游等领域，垂直搜索更精准
+- **来源引用清晰**：每条结果自带标题、链接和摘要，出处一目了然
+- **网页内容提取**：摘要不够用时一键提取网页正文，让 AI 读懂完整内容
+- **垂直场景全覆盖**：查论文、查文档、查药品、查漏洞、查航班，都有对应的精准搜索
 
 ## 插件架构
 
