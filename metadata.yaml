@@ -5,4 +5,3 @@ description: "基于 AnySearch API v3 的 AI 智能搜索插件，支持通用�
 display_name: AnySearch 智能搜索
 short_desc: 基于 AnySearch API 的智能搜索插件，支持 40 种垂直搜索能力
 repo: https://github.com/NoFizz/astrbot_plugin_anysearch_x
-astrbot_version: ">=4.26.0"
