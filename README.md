@@ -7,7 +7,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-blue?style=flat" alt="version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-green?style=flat" alt="license">
-  <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat" alt="python">
+  <img src="https://img.shields.io/badge/python-3.12+-blue?style=flat" alt="python">
+  <img src="https://img.shields.io/badge/AstrBot-%3E%3D4.17.0-orange?style=flat" alt="AstrBot version">
 </p>
 
 <p align="center">
@@ -143,8 +144,12 @@ models ← client ← cache ← main
 ## 依赖要求
 
 - Python >= 3.12
-- AstrBot >= 4.26.0
+- AstrBot >= 4.17.0
 - aiohttp >= 3.0.0
+
+## 支持平台
+
+仅支持 **aiocqhttp**（OneBot QQ）。
 
 ## 插件逻辑详解
 
