@@ -1,7 +1,7 @@
-<h1 align="center">AnySearch 全网搜索</h1>
+<h1 align="center">AnySearch 智能搜索</h1>
 
 <p align="center">
-  <img src="logo.png" width="128" height="128" alt="AnySearch 全网搜索 logo">
+  <img src="logo.png" width="128" height="128" alt="AnySearch 智能搜索 logo">
 </p>
 
 <p align="center">
@@ -11,13 +11,30 @@
   <img src="https://img.shields.io/badge/AstrBot-%3E%3D4.17.0-orange?style=flat" alt="AstrBot version">
 </p>
 
-<p align="center">
 基于 AnySearch API v3 的 AstrBot 搜索插件，配置 API 地址后 LLM 自动获得联网搜索能力，支持 40 种垂直能力标签精准搜索。
-</p>
 
 <p align="center">
   <img src="https://count.getloli.com/@astrbot_plugin_anysearch_x?theme=moebooru" alt="Moe Counter">
 </p>
+
+## 功能简介
+
+装了这个插件，你的 AI 助手就有了联网搜索能力。它在你和 AI 对话时自动判断"这个问题需要查一下吗"，需要时自己去网上搜索最新信息再回答你，全程不用你手动操作。无论是问新闻、查论文、找代码文档、看行情，还是查药品、查漏洞、查航班，它都能用对应的精准搜索帮你找到答案。
+
+## 内容列表
+
+- [功能特性](#功能特性)
+- [安装](#安装)
+- [配置说明](#配置说明)
+- [使用示例](#使用示例)
+- [插件架构](#插件架构)
+- [插件逻辑详解](#插件逻辑详解)
+- [故障排查](#故障排查)
+- [依赖要求](#依赖要求)
+- [支持平台](#支持平台)
+- [维护者](#维护者)
+- [如何贡献](#如何贡献)
+- [许可证](#许可证)
 
 ## 功能特性
 
@@ -27,23 +44,6 @@
 - **来源引用清晰**：每条结果自带标题、链接和摘要，出处一目了然
 - **网页内容提取**：摘要不够用时一键提取网页正文，让 AI 读懂完整内容
 - **垂直场景全覆盖**：查论文、查文档、查药品、查漏洞、查航班，都有对应的精准搜索
-
-## 插件架构
-
-### 模块结构
-
-插件按模块化架构组织，依赖方向为单向（箭头指向被依赖方）：
-
-```
-models ← client ← cache ← main
-```
-
-- `models.py`：异常层级、请求常量、40 个能力 tag 目录（17 类）
-- `client.py`：AnySearchClient，请求构造、错误映射、重试与配额耗尽错误、MCP 网页提取
-- `cache.py`：LRU + TTL 内存缓存
-- `main.py`：插件类、LLM 工具注册、指标统计、生命周期
-
-禁止反向 import（如 `client` 不得 import `main`）。
 
 ## 安装
 
@@ -141,15 +141,22 @@ models ← client ← cache ← main
 - `finance.quote` + `{"symbol": "AAPL", "type": "stock"}`
 - `security.vuln` + `{"type": "cve", "value": "CVE-2024-1234"}`
 
-## 依赖要求
+## 插件架构
 
-- Python >= 3.12
-- AstrBot >= 4.17.0
-- aiohttp >= 3.0.0
+### 模块结构
 
-## 支持平台
+插件按模块化架构组织，依赖方向为单向（箭头指向被依赖方）：
 
-仅支持 **aiocqhttp**（OneBot QQ）。
+```
+models ← client ← cache ← main
+```
+
+- `models.py`：异常层级、请求常量、40 个能力 tag 目录（17 类）
+- `client.py`：AnySearchClient，请求构造、错误映射、重试与配额耗尽错误、MCP 网页提取
+- `cache.py`：LRU + TTL 内存缓存
+- `main.py`：插件类、LLM 工具注册、指标统计、生命周期
+
+禁止反向 import（如 `client` 不得 import `main`）。
 
 ## 插件逻辑详解
 
@@ -336,12 +343,24 @@ handler 的注册方式有一个容易踩坑的细节：`_build_tools()` 中传�
 
 遇到网络错误、服务器 5xx 错误或 429 限流时，插件会自动重试最多 2 次，使用指数退避加随机抖动。429 响应会解析 `Retry-After` 头作为最小等待时间。401（认证失败）与 402（配额耗尽）直接报错，不重试——配额用尽时请配置 `api_key` 或等待额度重置。
 
-## 许可证
+## 依赖要求
 
-本项目基于 [AGPL-3.0](LICENSE) 许可证开源。
+- Python >= 3.12
+- AstrBot >= 4.17.0
+- aiohttp >= 3.0.0
 
-## 作者
+## 支持平台
+
+仅支持 **aiocqhttp**（OneBot QQ）。
+
+## 维护者
 
 **NoFizz** · [GitHub](https://github.com/NoFizz)
 
-如遇问题或有功能建议，欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_anysearch_x/issues)。
+## 如何贡献
+
+欢迎提交 [Issue](https://github.com/NoFizz/astrbot_plugin_anysearch_x/issues) 反馈问题或功能建议，也接受 [Pull Request](https://github.com/NoFizz/astrbot_plugin_anysearch_x/pulls)。
+
+## 许可证
+
+本项目基于 [AGPL-3.0](LICENSE) 许可证开源。
