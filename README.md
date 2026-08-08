@@ -17,6 +17,8 @@
   <img src="https://count.getloli.com/@astrbot_plugin_anysearch_x?theme=moebooru" alt="Moe Counter">
 </p>
 
+> **本插件已停止维护，不再更新。** 推荐通过 AnySearch 官方提供的 Skill 安装到 AstrBot 中使用 AnySearch 搜索能力，安装与使用说明见官网文档：[https://www.anysearch.com/docs#skill-install](https://www.anysearch.com/docs#skill-install)
+
 ## 功能简介
 
 装了这个插件，你的 AI 助手就有了联网搜索能力。它在你和 AI 对话时自动判断"这个问题需要查一下吗"，需要时自己去网上搜索最新信息再回答你，全程不用你手动操作。无论是问新闻、查论文、找代码文档、看行情，还是查药品、查漏洞、查航班，它都能用对应的精准搜索帮你找到答案。
